@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Shortcuts Below Search</title>
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Sortable -->
+  <script src="Sortable.min.js"></script>
+</head>
+<body>
+  <!-- Google検索バーを上に配置 -->
+  <input type="text" id="google-search" placeholder="Google で検索する">
+
+  <!-- グローバルショートカット一覧を下に表示 -->
+  <div id="shortcut-container"></div>
+
+  <!-- ボタンコンテナ (ショートカット追加ボタン) -->
+  <div class="button-container">
+    <button id="add-shortcut">ショートカット追加</button>
+  </div>
+
+  <!-- メインスクリプト -->
+  <script src="newtab.js"></script>
+</body>
+</html>

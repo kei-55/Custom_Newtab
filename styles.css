@@ -1,0 +1,175 @@
+/* 全体 */
+body {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; /* 垂直方向の中央揃え */
+}
+
+/* ショートカット一覧 */
+#shortcut-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  max-width: 800px;
+  width: 100%;
+  margin-top: 20px; 
+}
+
+/* ショートカット個別 */
+.shortcut {
+  background: white;
+  padding: 10px;
+  padding-right: 70px; /* その他の操作ボタン回避の余白 */
+  margin: 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: move; /* ドラッグしやすいカーソル */
+  word-wrap: break-word;
+  max-width: 100%; /* 最大幅を100%に設定 */
+  position: relative;
+}
+
+.shortcut:hover .delete-shortcut,
+.shortcut:hover .edit-shortcut,
+.shortcut:hover .more-shortcut {
+  display: block;
+}
+
+/* ショートカット内容を並行に表示 */
+.shortcut-content {
+  display: flex;
+  align-items: center;
+}
+
+.shortcut-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.shortcut-text {
+  word-wrap: break-word;
+  flex-grow: 1; /* テキストを残りのスペースに広げる */
+}
+
+/* 削除・編集ボタン */
+.delete-shortcut,
+.edit-shortcut,
+.more-shortcut {
+  display: none; /* 初期状態では非表示 */
+  position: absolute;
+  top: 5px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: black;
+  width: 24px;
+  height: 24px;
+  text-align: center;
+  line-height: 24px;
+  border-radius: 50%;
+}
+.delete-shortcut {
+  right: 5px;
+}
+.delete-shortcut:hover {
+  background-color: red; /* 削除ボタンにマウスカーソルを重ねた時に赤く表示 */
+}
+.edit-shortcut {
+  right: 30px;
+}
+.more-shortcut {
+  right: 5px; /* 右端に配置 */
+}
+
+/* Google検索バー */
+#google-search {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 20px;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* ボタンコンテナ */
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ボタン */
+.button-container button {
+  background-color: #6200ea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+.button-container button:hover {
+  background-color: #3700b3;
+}
+
+/* ポップアップ */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.popup-content h2 {
+  margin-top: 0;
+}
+
+.popup-content button {
+  margin: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.popup-content button:first-child {
+  background-color: #6200ea;
+  color: white;
+}
+
+.popup-content button:last-child {
+  background-color: #ccc;
+}
+
+.popup-content button:nth-child(3):hover {
+  background-color: red; /* ポップアップ内の削除ボタンにマウスカーソルを重ねた時に赤く表示 */
+}
