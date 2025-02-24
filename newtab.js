@@ -233,6 +233,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const backgroundColorInput = document.getElementById("background-color");
   const backgroundImageInput = document.getElementById("background-image");
   const applyBackgroundButton = document.getElementById("apply-background");
+  const backgroundSettingsButton = document.getElementById("background-settings-button");
+  const backgroundSettingsPopup = document.getElementById("background-settings-popup");
+  const closeBackgroundSettingsButton = document.getElementById("close-background-settings");
+
+  backgroundSettingsButton.addEventListener("click", () => {
+    backgroundSettingsPopup.style.display = "flex";
+  });
+
+  closeBackgroundSettingsButton.addEventListener("click", () => {
+    backgroundSettingsPopup.style.display = "none";
+  });
 
   applyBackgroundButton.addEventListener("click", () => {
     const color = backgroundColorInput.value;
@@ -247,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.style.backgroundImage = `url(${imageUrl})`;
       document.body.style.backgroundColor = "";
     }
+
+    backgroundSettingsPopup.style.display = "none";
   });
 
   //---------------------------------------
