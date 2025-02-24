@@ -21,6 +21,23 @@
     <button id="add-shortcut">ショートカット追加</button>
   </div>
 
+  <!-- 背景カスタマイズの歯車アイコン -->
+  <button id="background-settings-button" class="settings-button">⚙️</button>
+
+  <!-- 背景カスタマイズポップアップ -->
+  <div id="background-settings-popup" class="popup" style="display: none;">
+    <div class="popup-content">
+      <h3>背景を変更</h3>
+      <label for="background-color">背景色:</label>
+      <input type="color" id="background-color">
+      <br>
+      <label for="background-image">背景画像URL:</label>
+      <input type="text" id="background-image" placeholder="画像URLを入力">
+      <button id="apply-background">適用</button>
+      <button id="close-background-settings">閉じる</button>
+    </div>
+  </div>
+
   <!-- メインスクリプト -->
   <script src="newtab.js"></script>
 </body>

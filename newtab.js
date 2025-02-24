@@ -228,6 +228,41 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   //---------------------------------------
+  // 背景カスタマイズ
+  //---------------------------------------
+  const backgroundColorInput = document.getElementById("background-color");
+  const backgroundImageInput = document.getElementById("background-image");
+  const applyBackgroundButton = document.getElementById("apply-background");
+  const backgroundSettingsButton = document.getElementById("background-settings-button");
+  const backgroundSettingsPopup = document.getElementById("background-settings-popup");
+  const closeBackgroundSettingsButton = document.getElementById("close-background-settings");
+
+  backgroundSettingsButton.addEventListener("click", () => {
+    backgroundSettingsPopup.style.display = "flex";
+  });
+
+  closeBackgroundSettingsButton.addEventListener("click", () => {
+    backgroundSettingsPopup.style.display = "none";
+  });
+
+  applyBackgroundButton.addEventListener("click", () => {
+    const color = backgroundColorInput.value;
+    const imageUrl = backgroundImageInput.value.trim();
+
+    if (color) {
+      document.body.style.backgroundColor = color;
+      document.body.style.backgroundImage = "";
+    }
+
+    if (imageUrl) {
+      document.body.style.backgroundImage = `url(${imageUrl})`;
+      document.body.style.backgroundColor = "";
+    }
+
+    backgroundSettingsPopup.style.display = "none";
+  });
+
+  //---------------------------------------
   // 初期読み込み
   //---------------------------------------
   if (addShortcutButton) {
