@@ -1,40 +1,89 @@
-/* 全体 */
+:root {
+  --bg-start: #f6efe3;
+  --bg-end: #dce8f3;
+  --panel-bg: rgba(255, 255, 255, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.55);
+  --text-main: #1d2733;
+  --text-subtle: #5f6b76;
+  --accent: #0f766e;
+  --accent-hover: #0b5f59;
+  --danger: #b42318;
+  --neutral: #e7eaee;
+  --shadow: 0 18px 45px rgba(32, 44, 64, 0.14);
+}
+
 body {
   position: relative;
   margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  height: 100vh;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.9), transparent 45%),
+    linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  background-color: #f6efe3;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  justify-content: center; /* 垂直方向の中央揃え */
+  align-items: center;
+  justify-content: center;
 }
 
-/* ショートカット一覧 */
+.page {
+  width: min(960px, 100%);
+}
+
+.search-panel,
+.shortcuts-panel {
+  width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 #shortcut-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 15px;
-  max-width: 800px;
   width: 100%;
-  margin-top: 20px; 
+  margin-top: 24px;
 }
 
-/* ショートカット個別 */
 .shortcut {
-  background: white;
-  padding: 10px;
-  padding-right: 70px; /* その他の操作ボタン回避の余白 */
-  margin: 5px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  cursor: move; /* ドラッグしやすいカーソル */
-  word-wrap: break-word;
-  max-width: 100%; /* 最大幅を100%に設定 */
+  width: min(260px, 100%);
+  min-height: 60px;
   position: relative;
+  display: flex;
+  align-items: center;
+  padding: 14px 52px 14px 14px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+  cursor: move;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  word-break: break-word;
+}
+
+.shortcut:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 48px rgba(32, 44, 64, 0.2);
 }
 
 .shortcut:hover .delete-shortcut,
@@ -43,179 +92,262 @@ body {
   display: block;
 }
 
-/* ショートカット内容を並行に表示 */
 .shortcut-content {
   display: flex;
   align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .shortcut-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .shortcut-text {
-  word-wrap: break-word;
-  flex-grow: 1; /* テキストを残りのスペースに広げる */
+  flex-grow: 1;
+  overflow: hidden;
 }
 
-/* 削除・編集ボタン */
+.shortcut-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.shortcut-url {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .delete-shortcut,
 .edit-shortcut,
 .more-shortcut {
-  display: none; /* 初期状態では非表示 */
+  display: none;
   position: absolute;
   top: 5px;
   background: transparent;
   border: none;
   font-size: 14px;
   cursor: pointer;
-  color: black;
+  color: var(--text-main);
   width: 24px;
   height: 24px;
   text-align: center;
   line-height: 24px;
   border-radius: 50%;
 }
+
 .delete-shortcut {
   right: 5px;
 }
+
 .delete-shortcut:hover {
-  background-color: red; /* 削除ボタンにマウスカーソルを重ねた時に赤く表示 */
+  background-color: var(--danger);
+  color: #fff;
 }
+
 .edit-shortcut {
   right: 30px;
 }
+
 .more-shortcut {
-  right: 5px; /* 右端に配置 */
+  right: 8px;
 }
 
-/* Google検索バー */
+.more-shortcut:hover,
+.settings-button:hover {
+  background: rgba(15, 118, 110, 0.12);
+}
+
 #google-search {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 600px;
-  margin-top: 20px;
-  padding: 10px;
-  font-size: 16px;
-  border: none;
+  padding: 18px 20px;
+  font-size: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   outline: none;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow);
 }
 
-/* ボタンコンテナ */
-.button-container {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
+#google-search:focus,
+.field-input:focus {
+  border-color: rgba(15, 118, 110, 0.45);
+  box-shadow: 0 18px 45px rgba(15, 118, 110, 0.14);
+}
+
+.empty-state {
+  margin: 24px 0 0;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 14px;
+}
+
+.toolbar {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
 }
 
-/* ボタン */
-.button-container button {
-  background-color: #6200ea;
-  color: white;
+.button-container {
+  display: flex;
+  justify-content: center;
+}
+
+.button-container button,
+.settings-button {
+  background-color: var(--accent);
+  color: #fff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
+  padding: 13px 24px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 16px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-}
-.button-container button:hover {
-  background-color: #3700b3;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: background-color 0.18s ease, transform 0.18s ease;
 }
 
-/* ポップアップ */
+.button-container button:hover,
+.settings-button:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.settings-button {
+  min-width: 84px;
+}
+
 .popup {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(20, 24, 35, 0.45);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 
+.popup[hidden] {
+  display: none;
+}
+
 .popup-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  min-width: min(360px, calc(100vw - 32px));
+  background: #fff;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
   text-align: center;
+}
+
+.popup-content-wide {
+  text-align: left;
 }
 
 .popup-content h2 {
   margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.popup-content p {
+  margin: 0 0 18px;
+  color: var(--text-subtle);
+}
+
+.field-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #cfd6dc;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.field-input-color {
+  height: 48px;
+  padding: 6px;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
 }
 
 .popup-content button {
-  margin: 10px;
-  padding: 10px 20px;
+  min-width: 88px;
+  padding: 10px 18px;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
-.popup-content button:first-child {
-  background-color: #6200ea;
-  color: white;
+.popup-content button:first-of-type {
+  background-color: var(--accent);
+  color: #fff;
 }
 
-.popup-content button:last-child {
-  background-color: #ccc;
+.popup-content button:nth-of-type(2) {
+  background-color: #f2d6d3;
+  color: #6d1f17;
 }
 
-.popup-content button:nth-child(3):hover {
-  background-color: red; /* ポップアップ内の削除ボタンにマウスカーソルを重ねた時に赤く表示 */
+.popup-content button:last-of-type {
+  background-color: var(--neutral);
+  color: var(--text-main);
 }
 
-/* 背景カスタマイズ */
-.background-customization {
-  margin-top: 20px;
-  text-align: center;
-}
+@media (max-width: 640px) {
+  body {
+    padding: 16px;
+    justify-content: flex-start;
+  }
 
-.background-customization input {
-  margin: 5px;
-}
+  .page {
+    padding-top: 24px;
+  }
 
-.background-customization button {
-  margin-top: 10px;
-  padding: 5px 10px;
-  background-color: #6200ea;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
+  #shortcut-container {
+    gap: 12px;
+  }
 
-.background-customization button:hover {
-  background-color: #3700b3;
-}
+  .shortcut {
+    width: 100%;
+  }
 
-/* 背景カスタマイズの歯車アイコン */
-.settings-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #6200ea;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 24px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-}
-.settings-button:hover {
-  background-color: #3700b3;
+  .toolbar,
+  .popup-actions {
+    flex-direction: column;
+  }
+
+  .button-container,
+  .button-container button,
+  .settings-button,
+  .popup-content button {
+    width: 100%;
+  }
 }

@@ -3,42 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Shortcuts Below Search</title>
-  <!-- CSS -->
+  <title>Custom New Tab</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Sortable -->
   <script src="Sortable.min.js"></script>
 </head>
 <body>
-  <!-- Google検索バーを上に配置 -->
-  <input type="text" id="google-search" placeholder="Google で検索する">
+  <main class="page">
+    <section class="search-panel" aria-label="検索">
+      <label class="visually-hidden" for="google-search">Google 検索</label>
+      <input
+        type="text"
+        id="google-search"
+        placeholder="Google で検索する"
+        autocomplete="off"
+      >
+    </section>
 
-  <!-- グローバルショートカット一覧を下に表示 -->
-  <div id="shortcut-container"></div>
+    <section class="shortcuts-panel" aria-label="ショートカット">
+      <div id="shortcut-container" aria-live="polite"></div>
+      <p id="empty-state" class="empty-state" hidden>
+        まだショートカットがありません。「ショートカット追加」から登録できます。
+      </p>
+    </section>
 
-  <!-- ボタンコンテナ (ショートカット追加ボタン) -->
-  <div class="button-container">
-    <button id="add-shortcut">ショートカット追加</button>
-  </div>
+    <div class="toolbar">
+      <div class="button-container">
+        <button id="add-shortcut" type="button">ショートカット追加</button>
+      </div>
+      <button id="background-settings-button" class="settings-button" type="button">
+        背景
+      </button>
+    </div>
+  </main>
 
-  <!-- 背景カスタマイズの歯車アイコン -->
-  <button id="background-settings-button" class="settings-button">⚙️</button>
-
-  <!-- 背景カスタマイズポップアップ -->
-  <div id="background-settings-popup" class="popup" style="display: none;">
-    <div class="popup-content">
-      <h3>背景を変更</h3>
-      <label for="background-color">背景色:</label>
-      <input type="color" id="background-color">
-      <br>
-      <label for="background-image">背景画像URL:</label>
-      <input type="text" id="background-image" placeholder="画像URLを入力">
-      <button id="apply-background">適用</button>
-      <button id="close-background-settings">閉じる</button>
+  <div id="background-settings-popup" class="popup" hidden>
+    <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="background-popup-title">
+      <h2 id="background-popup-title">背景を変更</h2>
+      <p>背景色または画像URLを設定できます。</p>
+      <label class="field-label" for="background-color">背景色</label>
+      <input type="color" id="background-color" class="field-input field-input-color">
+      <label class="field-label" for="background-image">背景画像URL</label>
+      <input type="text" id="background-image" class="field-input" placeholder="https://example.com/image.jpg">
+      <div class="popup-actions">
+        <button id="apply-background" type="button">適用</button>
+        <button id="reset-background" type="button">リセット</button>
+        <button id="close-background-settings" type="button">閉じる</button>
+      </div>
     </div>
   </div>
 
-  <!-- メインスクリプト -->
   <script src="newtab.js"></script>
 </body>
 </html>

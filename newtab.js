@@ -2,145 +2,261 @@ document.addEventListener("DOMContentLoaded", () => {
   const shortcutContainer = document.getElementById("shortcut-container");
   const addShortcutButton = document.getElementById("add-shortcut");
   const googleSearch = document.getElementById("google-search");
+  const emptyState = document.getElementById("empty-state");
+  const backgroundColorInput = document.getElementById("background-color");
+  const backgroundImageInput = document.getElementById("background-image");
+  const applyBackgroundButton = document.getElementById("apply-background");
+  const resetBackgroundButton = document.getElementById("reset-background");
+  const backgroundSettingsButton = document.getElementById("background-settings-button");
+  const backgroundSettingsPopup = document.getElementById("background-settings-popup");
+  const closeBackgroundSettingsButton = document.getElementById("close-background-settings");
 
-  //---------------------------------------
-  // 1. Google検索
-  //---------------------------------------
-  googleSearch.addEventListener("keypress", (event) => {
+  function getStoredData(keys, callback) {
+    chrome.storage.sync.get(keys, callback);
+  }
+
+  function getStoredShortcuts(callback) {
+    getStoredData("shortcuts", (data) => {
+      const shortcuts = Array.isArray(data.shortcuts) ? data.shortcuts : [];
+      callback(shortcuts);
+    });
+  }
+
+  function saveShortcuts(shortcuts, callback = () => {}) {
+    chrome.storage.sync.set({ shortcuts }, callback);
+  }
+
+  function saveBackground(background, callback = () => {}) {
+    chrome.storage.sync.set({ background }, callback);
+  }
+
+  function normalizeUrl(rawValue) {
+    const trimmed = (rawValue || "").trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const withProtocol = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+
+    try {
+      const parsed = new URL(withProtocol);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return null;
+      }
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  function buildShortcut(rawUrl, rawName) {
+    const normalizedUrl = normalizeUrl(rawUrl);
+    if (!normalizedUrl) {
+      return null;
+    }
+
+    const normalizedName = (rawName || "").trim() || normalizedUrl;
+    return { url: normalizedUrl, name: normalizedName };
+  }
+
+  function toggleEmptyState(shortcuts) {
+    if (!emptyState) {
+      return;
+    }
+    emptyState.hidden = shortcuts.length > 0;
+  }
+
+  function applyBackground(background = {}) {
+    const color = (background.color || "").trim();
+    const imageUrl = normalizeUrl(background.imageUrl || "");
+
+    if (color) {
+      document.body.style.backgroundColor = color;
+    } else {
+      document.body.style.backgroundColor = "";
+    }
+
+    if (imageUrl) {
+      document.body.style.backgroundImage = `url("${imageUrl}")`;
+    } else {
+      document.body.style.backgroundImage = "";
+    }
+
+    if (backgroundColorInput) {
+      backgroundColorInput.value = color || "#f6efe3";
+    }
+    if (backgroundImageInput) {
+      backgroundImageInput.value = imageUrl || "";
+    }
+  }
+
+  function loadBackground() {
+    getStoredData("background", (data) => {
+      applyBackground(data.background || {});
+    });
+  }
+
+  function openBackgroundSettings() {
+    if (backgroundSettingsPopup) {
+      backgroundSettingsPopup.hidden = false;
+    }
+  }
+
+  function closeBackgroundSettings() {
+    if (backgroundSettingsPopup) {
+      backgroundSettingsPopup.hidden = true;
+    }
+  }
+
+  googleSearch.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       const query = googleSearch.value.trim();
       if (query) {
-        // EnterでGoogle検索
         window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       }
     }
   });
 
-  //---------------------------------------
-  // 2. ショートカット関連
-  //---------------------------------------
-  // ショートカット一覧を読み込んで表示
   function loadShortcuts() {
-    chrome.storage.sync.get("shortcuts", (data) => {
-      console.log("ショートカット一覧:", data.shortcuts);
-
+    getStoredShortcuts((shortcuts) => {
       shortcutContainer.innerHTML = "";
-      const shortcuts = data.shortcuts || [];
+      let renderedCount = 0;
 
       shortcuts.forEach((item, index) => {
-        // item = { url, name? }
         const shortcutEl = createShortcutElement(item, index);
-        shortcutContainer.appendChild(shortcutEl);
+        if (shortcutEl) {
+          shortcutContainer.appendChild(shortcutEl);
+          renderedCount += 1;
+        }
       });
+
+      toggleEmptyState(new Array(renderedCount));
     });
   }
 
-  // ショートカット追加
   function addShortcut() {
-    const url = prompt("ショートカットのURLを入力してください:");
-    if (!url) return;
-
-    let name = prompt("ショートカットの名前を入力してください:");
-    if (!name) {
-      name = url; // 名前が設定されない場合はURLを名前に設定
+    const rawUrl = prompt("ショートカットのURLを入力してください:");
+    if (!rawUrl) {
+      return;
     }
 
-    chrome.storage.sync.get("shortcuts", (data) => {
-      const arr = data.shortcuts || [];
-      arr.push({ url, name });
-      chrome.storage.sync.set({ shortcuts: arr }, loadShortcuts);
+    const rawName = prompt("ショートカットの名前を入力してください:");
+    const shortcut = buildShortcut(rawUrl, rawName);
+
+    if (!shortcut) {
+      alert("有効な http または https の URL を入力してください。");
+      return;
+    }
+
+    getStoredShortcuts((shortcuts) => {
+      shortcuts.push(shortcut);
+      saveShortcuts(shortcuts, loadShortcuts);
     });
   }
 
-  // ショートカット削除
   function removeShortcut(index) {
-    chrome.storage.sync.get("shortcuts", (data) => {
-      const arr = data.shortcuts || [];
-      arr.splice(index, 1);
-      chrome.storage.sync.set({ shortcuts: arr }, loadShortcuts);
+    getStoredShortcuts((shortcuts) => {
+      shortcuts.splice(index, 1);
+      saveShortcuts(shortcuts, loadShortcuts);
     });
   }
 
-  // ショートカット編集 (URL/名前)
   function editShortcut(item, index) {
-    const newURL = prompt("ショートカットの新しいURL:", item.url);
-    if (!newURL) return;
-
-    let newName = prompt("ショートカットの新しい名前:", item.name || "");
-    if (!newName) {
-      newName = newURL; // 名前が設定されない場合はURLを名前に設定
+    const newUrlInput = prompt("ショートカットの新しいURL:", item.url);
+    if (!newUrlInput) {
+      return;
     }
 
-    chrome.storage.sync.get("shortcuts", (data) => {
-      const arr = data.shortcuts || [];
-      if (arr[index]) {
-        arr[index].url = newURL;
-        arr[index].name = newName;
+    const newNameInput = prompt("ショートカットの新しい名前:", item.name || "");
+    const updatedShortcut = buildShortcut(newUrlInput, newNameInput);
+
+    if (!updatedShortcut) {
+      alert("有効な http または https の URL を入力してください。");
+      return;
+    }
+
+    getStoredShortcuts((shortcuts) => {
+      if (shortcuts[index]) {
+        shortcuts[index] = updatedShortcut;
       }
-      chrome.storage.sync.set({ shortcuts: arr }, loadShortcuts);
+      saveShortcuts(shortcuts, loadShortcuts);
     });
   }
 
-  // ショートカット要素を生成
   function createShortcutElement(item, index) {
+    if (!item || typeof item.url !== "string") {
+      return null;
+    }
+
+    const normalizedUrl = normalizeUrl(item.url);
+    if (!normalizedUrl) {
+      return null;
+    }
+
+    const url = new URL(normalizedUrl);
+    const displayName = (item.name || "").trim() || url.hostname;
+
     const shortcutEl = document.createElement("div");
     shortcutEl.className = "shortcut";
     shortcutEl.dataset.index = index;
-    shortcutEl.draggable = true;
+    shortcutEl.title = normalizedUrl;
 
-    const displayName = item.name ? item.name : "(無名)";
-
-    // アイコンとテキストを並行に表示するためのコンテナ
     const contentContainer = document.createElement("div");
     contentContainer.className = "shortcut-content";
 
-    // アイコンを取得して設定
     const favicon = document.createElement("img");
-    favicon.src = `https://www.google.com/s2/favicons?domain=${new URL(item.url).hostname}`;
+    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}&sz=64`;
     favicon.className = "shortcut-icon";
+    favicon.alt = "";
     contentContainer.appendChild(favicon);
 
-    // テキストを設定
     const textContainer = document.createElement("div");
     textContainer.className = "shortcut-text";
-    textContainer.innerText = item.name ? displayName : `${displayName}\n${item.url}`;
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "shortcut-name";
+    nameEl.textContent = displayName;
+
+    const urlEl = document.createElement("span");
+    urlEl.className = "shortcut-url";
+    urlEl.textContent = url.hostname;
+
+    textContainer.appendChild(nameEl);
+    textContainer.appendChild(urlEl);
     contentContainer.appendChild(textContainer);
 
     shortcutEl.appendChild(contentContainer);
 
-    // その他の操作ボタン
     const moreBtn = document.createElement("button");
     moreBtn.className = "more-shortcut";
+    moreBtn.type = "button";
     moreBtn.innerText = "⋮";
-    moreBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
+    moreBtn.setAttribute("aria-label", `${displayName} の操作を開く`);
+    moreBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
       showMoreOptions(item, index);
     });
     shortcutEl.appendChild(moreBtn);
 
-    // ショートカットをクリックでURLを開く
     shortcutEl.addEventListener("click", () => {
-      window.open(item.url, "_blank");
-    });
-
-    // ドラッグ開始
-    shortcutEl.addEventListener("dragstart", (ev) => {
-      const payload = {
-        from: "global",
-        index,
-        url: item.url,
-        name: item.name
-      };
-      ev.dataTransfer.setData("text/plain", JSON.stringify(payload));
+      window.open(normalizedUrl, "_blank", "noopener,noreferrer");
     });
 
     return shortcutEl;
   }
 
-  // その他の操作を表示
   function showMoreOptions(item, index) {
+    closePopup();
+
     const popup = document.createElement("div");
     popup.className = "popup";
+    popup.addEventListener("click", (event) => {
+      if (event.target === popup) {
+        closePopup();
+      }
+    });
 
     const popupContent = document.createElement("div");
     popupContent.className = "popup-content";
@@ -149,7 +265,12 @@ document.addEventListener("DOMContentLoaded", () => {
     popupTitle.innerText = "その他の操作";
     popupContent.appendChild(popupTitle);
 
+    const popupDescription = document.createElement("p");
+    popupDescription.innerText = item.name || item.url;
+    popupContent.appendChild(popupDescription);
+
     const editButton = document.createElement("button");
+    editButton.type = "button";
     editButton.innerText = "編集";
     editButton.addEventListener("click", () => {
       editShortcut(item, index);
@@ -158,14 +279,18 @@ document.addEventListener("DOMContentLoaded", () => {
     popupContent.appendChild(editButton);
 
     const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
     deleteButton.innerText = "削除";
     deleteButton.addEventListener("click", () => {
-      removeShortcut(index);
-      closePopup();
+      if (confirm("このショートカットを削除しますか？")) {
+        removeShortcut(index);
+        closePopup();
+      }
     });
     popupContent.appendChild(deleteButton);
 
     const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
     cancelButton.innerText = "キャンセル";
     cancelButton.addEventListener("click", () => {
       closePopup();
@@ -177,99 +302,116 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function closePopup() {
-    const popup = document.querySelector(".popup");
-    if (popup) {
+    const popup = document.querySelector(".popup:not([hidden])");
+    if (popup && popup !== backgroundSettingsPopup) {
       document.body.removeChild(popup);
     }
   }
 
-  // ドラッグ＆ドロップでショートカットの並び替え
   if (typeof Sortable !== "undefined" && shortcutContainer) {
     new Sortable(shortcutContainer, {
       animation: 150,
       onEnd: () => {
-        const newOrder = Array.from(shortcutContainer.children).map(el => el.dataset.index);
+        const newOrder = Array.from(shortcutContainer.children).map((el) => Number(el.dataset.index));
         reorderShortcuts(newOrder);
       }
     });
   }
 
   function reorderShortcuts(newOrder) {
-    chrome.storage.sync.get("shortcuts", (data) => {
-      const arr = data.shortcuts || [];
-      const reordered = newOrder.map(idx => arr[parseInt(idx)]);
-      chrome.storage.sync.set({ shortcuts: reordered }, loadShortcuts);
+    getStoredShortcuts((shortcuts) => {
+      const reordered = newOrder
+        .map((idx) => shortcuts[idx])
+        .filter(Boolean);
+      saveShortcuts(reordered, loadShortcuts);
     });
   }
 
-  // ショートカットをドロップ (フォルダ機能なし)
-  shortcutContainer.addEventListener("dragover", (ev) => {
-    ev.preventDefault();
+  function addDroppedShortcut(text) {
+    const shortcut = buildShortcut(text, "");
+    if (!shortcut) {
+      return;
+    }
+
+    getStoredShortcuts((shortcuts) => {
+      shortcuts.push(shortcut);
+      saveShortcuts(shortcuts, loadShortcuts);
+    });
+  }
+
+  shortcutContainer.addEventListener("dragover", (event) => {
+    event.preventDefault();
   });
-  shortcutContainer.addEventListener("drop", (ev) => {
-    ev.preventDefault();
-    const text = ev.dataTransfer.getData("text/plain");
-    if (!text) return;
-    try {
-      const parsed = JSON.parse(text);
-      console.log("ドロップされたデータ:", parsed);
-      // フォルダ機能は削除しているため特に処理しない
-      // ここで他のサイトからのURLを追加してもよい
-    } catch {
-      // 単純なURL文字列として追加
-      if (text.startsWith("http")) {
-        chrome.storage.sync.get("shortcuts", (data) => {
-          const arr = data.shortcuts || [];
-          arr.push({ url: text, name: text }); // 名前が設定されない場合はURLを名前に設定
-          chrome.storage.sync.set({ shortcuts: arr }, loadShortcuts);
-        });
+
+  shortcutContainer.addEventListener("drop", (event) => {
+    event.preventDefault();
+
+    const uriList = event.dataTransfer.getData("text/uri-list");
+    const text = uriList || event.dataTransfer.getData("text/plain");
+    if (!text) {
+      return;
+    }
+
+    addDroppedShortcut(text.split("\n")[0]);
+  });
+
+  if (backgroundSettingsButton) {
+    backgroundSettingsButton.addEventListener("click", openBackgroundSettings);
+  }
+
+  if (closeBackgroundSettingsButton) {
+    closeBackgroundSettingsButton.addEventListener("click", closeBackgroundSettings);
+  }
+
+  if (backgroundSettingsPopup) {
+    backgroundSettingsPopup.addEventListener("click", (event) => {
+      if (event.target === backgroundSettingsPopup) {
+        closeBackgroundSettings();
       }
-    }
-  });
+    });
+  }
 
-  //---------------------------------------
-  // 背景カスタマイズ
-  //---------------------------------------
-  const backgroundColorInput = document.getElementById("background-color");
-  const backgroundImageInput = document.getElementById("background-image");
-  const applyBackgroundButton = document.getElementById("apply-background");
-  const backgroundSettingsButton = document.getElementById("background-settings-button");
-  const backgroundSettingsPopup = document.getElementById("background-settings-popup");
-  const closeBackgroundSettingsButton = document.getElementById("close-background-settings");
+  if (applyBackgroundButton) {
+    applyBackgroundButton.addEventListener("click", () => {
+      const nextBackground = {
+        color: backgroundColorInput.value,
+        imageUrl: backgroundImageInput.value.trim()
+      };
 
-  backgroundSettingsButton.addEventListener("click", () => {
-    backgroundSettingsPopup.style.display = "flex";
-  });
+      if (nextBackground.imageUrl && !normalizeUrl(nextBackground.imageUrl)) {
+        alert("背景画像URLには有効な http または https の URL を入力してください。");
+        return;
+      }
 
-  closeBackgroundSettingsButton.addEventListener("click", () => {
-    backgroundSettingsPopup.style.display = "none";
-  });
+      saveBackground(nextBackground, () => {
+        applyBackground(nextBackground);
+        closeBackgroundSettings();
+      });
+    });
+  }
 
-  applyBackgroundButton.addEventListener("click", () => {
-    const color = backgroundColorInput.value;
-    const imageUrl = backgroundImageInput.value.trim();
+  if (resetBackgroundButton) {
+    resetBackgroundButton.addEventListener("click", () => {
+      saveBackground({}, () => {
+        applyBackground({});
+        closeBackgroundSettings();
+      });
+    });
+  }
 
-    if (color) {
-      document.body.style.backgroundColor = color;
-      document.body.style.backgroundImage = "";
-    }
-
-    if (imageUrl) {
-      document.body.style.backgroundImage = `url(${imageUrl})`;
-      document.body.style.backgroundColor = "";
-    }
-
-    backgroundSettingsPopup.style.display = "none";
-  });
-
-  //---------------------------------------
-  // 初期読み込み
-  //---------------------------------------
   if (addShortcutButton) {
     addShortcutButton.addEventListener("click", () => {
       addShortcut();
     });
   }
 
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePopup();
+      closeBackgroundSettings();
+    }
+  });
+
+  loadBackground();
   loadShortcuts();
 });
