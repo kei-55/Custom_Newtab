@@ -9,6 +9,45 @@
 </head>
 <body>
   <main class="page">
+    <header id="dashboard-header" class="dashboard-header" aria-label="ダッシュボード情報">
+      <div class="dashboard-hero">
+        <p class="eyebrow">New Tab Dashboard</p>
+        <h1>今日の作業をひと目で開く</h1>
+        <p class="dashboard-subtitle">
+          時刻、日付、統計、背景状態をまとめて確認できます。
+        </p>
+      </div>
+
+      <div class="dashboard-metrics">
+        <article class="metric-card metric-card--time">
+          <span class="metric-label">時刻</span>
+          <strong id="current-time" class="metric-value">--:--</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">日付</span>
+          <strong id="current-date" class="metric-value">----</strong>
+        </article>
+        <article class="metric-card metric-card--status">
+          <span class="metric-label">背景状態</span>
+          <strong id="background-status" class="metric-value">未設定</strong>
+        </article>
+        <article class="metric-card metric-card--status">
+          <span class="metric-label">最終更新</span>
+          <strong id="last-updated" class="metric-value">--</strong>
+        </article>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-card__meta">
+          <span class="metric-label">月間進行率</span>
+          <span id="month-progress-label" class="progress-card__value">0%</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="month-progress-bar" class="progress-fill"></div>
+        </div>
+      </div>
+    </header>
+
     <section class="search-panel" aria-label="検索">
       <label class="visually-hidden" for="google-search">Google 検索</label>
       <input
@@ -29,12 +68,26 @@
       </div>
     </section>
 
-    <section id="pinned-section" class="shortcuts-panel" aria-label="ピン留めショートカット">
+    <section id="pinned-shortcuts" class="shortcut-section shortcut-section--pinned" aria-label="固定ショートカット">
       <div class="section-header">
-        <h2 id="shortcuts-section-title">ショートカット</h2>
-        <span id="shortcut-count" class="section-chip">0</span>
+        <h2>固定ショートカット</h2>
+        <span id="pinned-shortcut-count" class="section-chip">0</span>
       </div>
-      <div id="pinned-container" class="shortcut-stack" aria-live="polite">
+      <div id="pinned-container" class="shortcut-stack" aria-live="polite"></div>
+      <div id="pinned-empty-state" class="section-empty">
+        固定したショートカットはここに表示されます。
+      </div>
+    </section>
+
+    <section id="regular-shortcuts" class="shortcut-section shortcut-section--regular shortcuts-panel" aria-label="通常ショートカット">
+      <div class="section-header">
+        <h2 id="shortcuts-section-title">通常ショートカット</h2>
+        <div class="section-header__counts">
+          <span id="shortcut-count" class="section-chip">0/0</span>
+          <span id="regular-shortcut-count" class="section-chip section-chip--soft">0</span>
+        </div>
+      </div>
+      <div class="shortcut-stack" aria-live="polite">
         <div id="shortcut-container"></div>
       </div>
       <p id="empty-state" class="empty-state" hidden>
