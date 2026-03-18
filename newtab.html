@@ -9,12 +9,29 @@
 </head>
 <body>
   <main class="page">
+    <section class="search-panel" aria-label="検索">
+      <div class="search-shell">
+        <label class="visually-hidden" for="google-search">Google 検索</label>
+        <input
+          type="text"
+          id="google-search"
+          placeholder="Google で検索する"
+          autocomplete="off"
+        >
+      </div>
+    </section>
+
     <section class="shortcuts-shell" aria-label="ショートカット">
-      <div class="section-header section-header--stacked">
-        <div>
-          <p class="eyebrow">Shortcuts First</p>
-          <h1 class="section-title">よく使う場所を、最初に見る</h1>
-          <p class="section-copy">固定したショートカットを上段に、通常のショートカットをその下に並べます。</p>
+      <div class="shortcuts-topbar">
+        <div class="section-header section-header--compact">
+          <div>
+            <h2 class="section-title-compact">ショートカット</h2>
+          </div>
+          <div class="section-header__counts">
+            <span id="shortcut-count" class="section-chip">0/0</span>
+            <span id="pinned-shortcut-count" class="section-chip">0</span>
+            <span id="regular-shortcut-count" class="section-chip section-chip--soft">0</span>
+          </div>
         </div>
         <label class="visually-hidden" for="shortcut-filter">ショートカットを絞り込む</label>
         <input
@@ -27,9 +44,8 @@
       </div>
 
       <section id="pinned-shortcuts" class="shortcut-section shortcut-section--pinned" aria-label="固定ショートカット">
-        <div class="section-header">
-          <h2>固定ショートカット</h2>
-          <span id="pinned-shortcut-count" class="section-chip">0</span>
+        <div class="section-header section-header--compact">
+          <h3>固定</h3>
         </div>
         <div id="pinned-container" class="shortcut-stack" aria-live="polite"></div>
         <div id="pinned-empty-state" class="section-empty">
@@ -38,12 +54,8 @@
       </section>
 
       <section id="regular-shortcuts" class="shortcut-section shortcut-section--regular shortcuts-panel" aria-label="通常ショートカット">
-        <div class="section-header">
-          <h2 id="shortcuts-section-title">通常ショートカット</h2>
-          <div class="section-header__counts">
-            <span id="shortcut-count" class="section-chip">0/0</span>
-            <span id="regular-shortcut-count" class="section-chip section-chip--soft">0</span>
-          </div>
+        <div class="section-header section-header--compact">
+          <h3 id="shortcuts-section-title">すべて</h3>
         </div>
         <div class="shortcut-stack" aria-live="polite">
           <div id="shortcut-container"></div>
@@ -54,75 +66,59 @@
       </section>
     </section>
 
-    <header id="dashboard-header" class="dashboard-header" aria-label="時刻と日付">
-      <div class="dashboard-hero">
-        <p class="eyebrow">Live Status</p>
-        <h1>今日の時間感覚をつかむ</h1>
-        <p class="dashboard-subtitle">
-          時刻、日付、月間進行率を見て、これからの作業にすぐ入れます。
-        </p>
-      </div>
-
-      <div class="dashboard-metrics">
-        <article class="metric-card metric-card--time">
-          <span class="metric-label">時刻</span>
-          <strong id="current-time" class="metric-value">--:--</strong>
-        </article>
-        <article class="metric-card">
-          <span class="metric-label">日付</span>
-          <strong id="current-date" class="metric-value">----</strong>
-        </article>
-      </div>
-
-      <div class="progress-card">
-        <div class="progress-card__meta">
-          <span class="metric-label">月間進行率</span>
-          <span id="month-progress-label" class="progress-card__value">0%</span>
+    <section class="dashboard-grid" aria-label="ダッシュボード">
+      <header id="dashboard-header" class="dashboard-header" aria-label="時刻と日付">
+        <div class="dashboard-metrics">
+          <article class="metric-card metric-card--time">
+            <span class="metric-label">時刻</span>
+            <strong id="current-time" class="metric-value">--:--</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">日付</span>
+            <strong id="current-date" class="metric-value">----</strong>
+          </article>
         </div>
-        <div class="progress-track" aria-hidden="true">
-          <div id="month-progress-bar" class="progress-fill"></div>
-        </div>
-      </div>
-    </header>
 
-    <section class="search-panel" aria-label="検索">
-      <label class="visually-hidden" for="google-search">Google 検索</label>
-      <input
-        type="text"
-        id="google-search"
-        placeholder="Google で検索する"
-        autocomplete="off"
-      >
-    </section>
-
-    <section class="insight-grid" aria-label="情報パネル">
-      <article id="news-panel" class="info-panel" aria-label="ニュースと情報">
-        <div class="section-header">
-          <div>
-            <p class="eyebrow">News</p>
-            <h2>気になるニュース</h2>
+        <div class="progress-card">
+          <div class="progress-card__meta">
+            <span class="metric-label">月間進行率</span>
+            <span id="month-progress-label" class="progress-card__value">0%</span>
           </div>
-          <span class="section-chip">Feed</span>
-        </div>
-        <ul id="news-list" class="info-list"></ul>
-        <p id="news-empty" class="section-empty">
-          まだニュースソースがありません。「情報設定」から登録してください。
-        </p>
-      </article>
-
-      <article id="server-panel" class="info-panel" aria-label="サーバー状態">
-        <div class="section-header">
-          <div>
-            <p class="eyebrow">Ops</p>
-            <h2>サーバー状態</h2>
+          <div class="progress-track" aria-hidden="true">
+            <div id="month-progress-bar" class="progress-fill"></div>
           </div>
-          <span class="section-chip section-chip--soft">Health</span>
         </div>
-        <ul id="server-status-list" class="info-list"></ul>
-        <p id="server-empty" class="section-empty">
-          監視先がありません。「情報設定」から health endpoint を追加してください。
-        </p>
-      </article>
+      </header>
+
+      <section class="insight-grid" aria-label="情報パネル">
+        <article id="news-panel" class="info-panel" aria-label="ニュースと情報">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">News</p>
+              <h2>気になるニュース</h2>
+            </div>
+            <span class="section-chip">Feed</span>
+          </div>
+          <ul id="news-list" class="info-list"></ul>
+          <p id="news-empty" class="section-empty">
+            まだニュースソースがありません。「情報設定」から登録してください。
+          </p>
+        </article>
+
+        <article id="server-panel" class="info-panel" aria-label="サーバー状態">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Ops</p>
+              <h2>サーバー状態</h2>
+            </div>
+            <span class="section-chip section-chip--soft">Health</span>
+          </div>
+          <ul id="server-status-list" class="info-list"></ul>
+          <p id="server-empty" class="section-empty">
+            監視先がありません。「情報設定」から health endpoint を追加してください。
+          </p>
+        </article>
+      </section>
     </section>
 
     <div class="toolbar">
