@@ -44,7 +44,7 @@
       </div>
 
       <section id="pinned-shortcuts" class="shortcut-section shortcut-section--pinned" aria-label="固定ショートカット">
-        <div class="section-header section-header--compact">
+        <div class="shortcut-section-header">
           <h3>固定</h3>
         </div>
         <div id="pinned-container" class="shortcut-stack" aria-live="polite"></div>
@@ -54,7 +54,7 @@
       </section>
 
       <section id="regular-shortcuts" class="shortcut-section shortcut-section--regular shortcuts-panel" aria-label="通常ショートカット">
-        <div class="section-header section-header--compact">
+        <div class="shortcut-section-header">
           <h3 id="shortcuts-section-title">すべて</h3>
         </div>
         <div class="shortcut-stack" aria-live="polite">
@@ -66,29 +66,7 @@
       </section>
     </section>
 
-    <section class="dashboard-grid" aria-label="ダッシュボード">
-      <header id="dashboard-header" class="dashboard-header" aria-label="時刻と日付">
-        <div class="dashboard-metrics">
-          <article class="metric-card metric-card--time">
-            <span class="metric-label">時刻</span>
-            <strong id="current-time" class="metric-value">--:--</strong>
-          </article>
-          <article class="metric-card">
-            <span class="metric-label">日付</span>
-            <strong id="current-date" class="metric-value">----</strong>
-          </article>
-          <article class="metric-card metric-card--news">
-            <span class="metric-label">新着条件</span>
-            <strong id="recent-window-label" class="metric-value">24時間以内</strong>
-          </article>
-          <article class="metric-card metric-card--news">
-            <span class="metric-label">更新間隔</span>
-            <strong id="refresh-interval-label" class="metric-value">10分ごと</strong>
-          </article>
-        </div>
-      </header>
-
-      <section class="insight-grid" aria-label="情報パネル">
+    <section class="insight-grid" aria-label="情報パネル">
         <article id="news-panel" class="info-panel" aria-label="ニュースと情報">
           <div class="section-header">
             <div>
@@ -116,12 +94,13 @@
             監視先がありません。「情報設定」から health endpoint を追加してください。
           </p>
         </article>
-      </section>
     </section>
 
     <div class="toolbar">
       <div class="button-group">
         <button id="add-shortcut" type="button">ショートカット追加</button>
+        <button id="add-folder" type="button">フォルダ追加</button>
+        <button id="import-bookmarks-button" class="settings-button settings-button--secondary" type="button">ブックマーク取り込み</button>
         <button id="feed-settings-button" class="settings-button settings-button--secondary" type="button">情報設定</button>
         <button id="background-settings-button" class="settings-button" type="button">背景</button>
       </div>
@@ -148,23 +127,6 @@
     <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="feed-settings-title">
       <h2 id="feed-settings-title">情報設定</h2>
       <p>ニュースソースとサーバーの health endpoint を登録します。1 行に 1 件で、`label|url` または URL 単体で入力できます。</p>
-      <label class="field-label" for="news-recency-hours">新着として扱う時間</label>
-      <select id="news-recency-hours" class="field-input">
-        <option value="3">3時間以内</option>
-        <option value="6">6時間以内</option>
-        <option value="12">12時間以内</option>
-        <option value="24" selected>24時間以内</option>
-        <option value="48">48時間以内</option>
-        <option value="72">72時間以内</option>
-      </select>
-      <label class="field-label" for="news-refresh-minutes">ニュース更新間隔</label>
-      <select id="news-refresh-minutes" class="field-input">
-        <option value="5">5分ごと</option>
-        <option value="10" selected>10分ごと</option>
-        <option value="15">15分ごと</option>
-        <option value="30">30分ごと</option>
-        <option value="60">60分ごと</option>
-      </select>
       <label class="field-label" for="news-sources-input">ニュースソース</label>
       <textarea id="news-sources-input" class="field-input field-textarea" rows="5" placeholder="Publickey|https://www.publickey1.jp/atom.xml"></textarea>
       <label class="field-label" for="server-endpoints-input">サーバーURL</label>
@@ -190,6 +152,8 @@
         <input type="text" id="shortcut-name-input" class="field-input" placeholder="例: GitHub">
         <label class="field-label" for="shortcut-url-input">URL</label>
         <input type="text" id="shortcut-url-input" class="field-input" placeholder="https://github.com">
+        <label class="field-label" for="shortcut-parent-folder">配置先</label>
+        <select id="shortcut-parent-folder" class="field-input"></select>
         <label class="toggle-row" for="shortcut-pinned">
           <input type="checkbox" id="shortcut-pinned">
           <span>ピン留めする</span>
@@ -199,6 +163,52 @@
           <button id="shortcut-cancel" class="button-neutral" type="button">キャンセル</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="folder-modal" class="popup" hidden>
+    <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title">
+      <h2 id="folder-modal-title">フォルダを追加</h2>
+      <p>ショートカットをまとめるフォルダを作成できます。</p>
+      <form id="folder-form" class="shortcut-form">
+        <label class="field-label" for="folder-name-input">フォルダ名</label>
+        <input type="text" id="folder-name-input" class="field-input" placeholder="例: インフラ">
+        <label class="toggle-row" for="folder-pinned">
+          <input type="checkbox" id="folder-pinned">
+          <span>固定する</span>
+        </label>
+        <div class="popup-actions">
+          <button id="folder-submit" class="button-primary" type="submit">保存</button>
+          <button id="folder-cancel" class="button-neutral" type="button">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="folder-view-modal" class="popup" hidden>
+    <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="folder-view-title">
+      <h2 id="folder-view-title">フォルダ</h2>
+      <p id="folder-view-subtitle">このフォルダ内のショートカットを管理します。</p>
+      <div id="folder-view-list" class="folder-view-list"></div>
+      <p id="folder-view-empty" class="section-empty" hidden>このフォルダにはまだショートカットがありません。</p>
+      <div class="popup-actions">
+        <button id="folder-add-shortcut" class="button-primary" type="button">ショートカット追加</button>
+        <button id="folder-close" class="button-neutral" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bookmark-import-modal" class="popup" hidden>
+    <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="bookmark-import-title">
+      <h2 id="bookmark-import-title">ブックマーク取り込み</h2>
+      <p>Chrome のブックマークから、必要なフォルダだけショートカットへ取り込めます。</p>
+      <div id="bookmark-tree" class="bookmark-tree"></div>
+      <p id="bookmark-tree-empty" class="section-empty" hidden>取り込めるブックマークフォルダが見つかりません。</p>
+      <div class="popup-actions">
+        <button id="bookmark-import-selected" class="button-primary" type="button">選択フォルダを取り込む</button>
+        <button id="bookmark-import-all" class="button-neutral" type="button">全件取り込む</button>
+        <button id="bookmark-close" class="button-neutral" type="button">閉じる</button>
+      </div>
     </div>
   </div>
 
