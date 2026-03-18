@@ -17,10 +17,26 @@
         placeholder="Google で検索する"
         autocomplete="off"
       >
+      <div class="filter-row">
+        <label class="visually-hidden" for="shortcut-filter">ショートカットを絞り込む</label>
+        <input
+          type="text"
+          id="shortcut-filter"
+          class="filter-input"
+          placeholder="ショートカットを絞り込む"
+          autocomplete="off"
+        >
+      </div>
     </section>
 
-    <section class="shortcuts-panel" aria-label="ショートカット">
-      <div id="shortcut-container" aria-live="polite"></div>
+    <section id="pinned-section" class="shortcuts-panel" aria-label="ピン留めショートカット">
+      <div class="section-header">
+        <h2 id="shortcuts-section-title">ショートカット</h2>
+        <span id="shortcut-count" class="section-chip">0</span>
+      </div>
+      <div id="pinned-container" class="shortcut-stack" aria-live="polite">
+        <div id="shortcut-container"></div>
+      </div>
       <p id="empty-state" class="empty-state" hidden>
         まだショートカットがありません。「ショートカット追加」から登録できます。
       </p>
@@ -45,10 +61,36 @@
       <label class="field-label" for="background-image">背景画像URL</label>
       <input type="text" id="background-image" class="field-input" placeholder="https://example.com/image.jpg">
       <div class="popup-actions">
-        <button id="apply-background" type="button">適用</button>
-        <button id="reset-background" type="button">リセット</button>
-        <button id="close-background-settings" type="button">閉じる</button>
+        <button id="apply-background" class="button-primary" type="button">適用</button>
+        <button id="reset-background" class="button-danger" type="button">リセット</button>
+        <button id="close-background-settings" class="button-neutral" type="button">閉じる</button>
       </div>
+    </div>
+  </div>
+
+  <div id="shortcut-modal" class="popup" hidden>
+    <div
+      class="popup-content popup-content-wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcut-modal-title"
+    >
+      <h2 id="shortcut-modal-title">ショートカットを追加</h2>
+      <p>名前、URL、ピン留めをまとめて編集できます。</p>
+      <form id="shortcut-form" class="shortcut-form">
+        <label class="field-label" for="shortcut-name-input">名前</label>
+        <input type="text" id="shortcut-name-input" class="field-input" placeholder="例: GitHub">
+        <label class="field-label" for="shortcut-url-input">URL</label>
+        <input type="text" id="shortcut-url-input" class="field-input" placeholder="https://github.com">
+        <label class="toggle-row" for="shortcut-pinned">
+          <input type="checkbox" id="shortcut-pinned">
+          <span>ピン留めする</span>
+        </label>
+        <div class="popup-actions">
+          <button id="shortcut-submit" class="button-primary" type="submit">保存</button>
+          <button id="shortcut-cancel" class="button-neutral" type="button">キャンセル</button>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -2,7 +2,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const shortcutContainer = document.getElementById("shortcut-container");
   const addShortcutButton = document.getElementById("add-shortcut");
   const googleSearch = document.getElementById("google-search");
+  const shortcutFilterInput = document.getElementById("shortcut-filter");
   const emptyState = document.getElementById("empty-state");
+  const shortcutCount = document.getElementById("shortcut-count");
+  const shortcutsSectionTitle = document.getElementById("shortcuts-section-title");
+
+  const shortcutModal = document.getElementById("shortcut-modal");
+  const shortcutModalTitle = document.getElementById("shortcut-modal-title");
+  const shortcutForm = document.getElementById("shortcut-form");
+  const shortcutNameInput = document.getElementById("shortcut-name-input");
+  const shortcutUrlInput = document.getElementById("shortcut-url-input");
+  const shortcutPinnedInput = document.getElementById("shortcut-pinned");
+  const shortcutCancelButton = document.getElementById("shortcut-cancel");
+
   const backgroundColorInput = document.getElementById("background-color");
   const backgroundImageInput = document.getElementById("background-image");
   const applyBackgroundButton = document.getElementById("apply-background");
@@ -10,6 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const backgroundSettingsButton = document.getElementById("background-settings-button");
   const backgroundSettingsPopup = document.getElementById("background-settings-popup");
   const closeBackgroundSettingsButton = document.getElementById("close-background-settings");
+
+  const state = {
+    shortcuts: [],
+    filterQuery: "",
+    editingIndex: null
+  };
 
   function getStoredData(keys, callback) {
     chrome.storage.sync.get(keys, callback);
@@ -51,38 +69,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function buildShortcut(rawUrl, rawName) {
+  function buildShortcut(rawUrl, rawName, pinned = false) {
     const normalizedUrl = normalizeUrl(rawUrl);
     if (!normalizedUrl) {
       return null;
     }
 
     const normalizedName = (rawName || "").trim() || normalizedUrl;
-    return { url: normalizedUrl, name: normalizedName };
-  }
-
-  function toggleEmptyState(shortcuts) {
-    if (!emptyState) {
-      return;
-    }
-    emptyState.hidden = shortcuts.length > 0;
+    return {
+      url: normalizedUrl,
+      name: normalizedName,
+      pinned: Boolean(pinned)
+    };
   }
 
   function applyBackground(background = {}) {
     const color = (background.color || "").trim();
     const imageUrl = normalizeUrl(background.imageUrl || "");
 
-    if (color) {
-      document.body.style.backgroundColor = color;
-    } else {
-      document.body.style.backgroundColor = "";
-    }
-
-    if (imageUrl) {
-      document.body.style.backgroundImage = `url("${imageUrl}")`;
-    } else {
-      document.body.style.backgroundImage = "";
-    }
+    document.body.style.backgroundColor = color || "";
+    document.body.style.backgroundImage = imageUrl ? `url("${imageUrl}")` : "";
 
     if (backgroundColorInput) {
       backgroundColorInput.value = color || "#f6efe3";
@@ -98,90 +104,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function openBackgroundSettings() {
-    if (backgroundSettingsPopup) {
-      backgroundSettingsPopup.hidden = false;
+  function toggleEmptyState(hasItems) {
+    if (emptyState) {
+      emptyState.hidden = hasItems;
+      emptyState.textContent = state.filterQuery
+        ? "条件に一致するショートカットがありません。"
+        : "まだショートカットがありません。「ショートカット追加」から登録できます。";
     }
   }
 
-  function closeBackgroundSettings() {
-    if (backgroundSettingsPopup) {
-      backgroundSettingsPopup.hidden = true;
+  function updateShortcutSummary(totalCount, visibleCount) {
+    if (shortcutCount) {
+      shortcutCount.textContent = `${visibleCount}/${totalCount}`;
+    }
+
+    if (shortcutsSectionTitle) {
+      shortcutsSectionTitle.textContent = state.filterQuery
+        ? "絞り込み結果"
+        : "ショートカット";
     }
   }
 
-  googleSearch.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      const query = googleSearch.value.trim();
-      if (query) {
-        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+  function getFilteredShortcuts() {
+    const query = state.filterQuery.trim().toLowerCase();
+    const normalized = state.shortcuts.map((item, index) => ({ item, index }));
+
+    const filtered = query
+      ? normalized.filter(({ item }) => {
+          const name = (item.name || "").toLowerCase();
+          const url = (item.url || "").toLowerCase();
+          return name.includes(query) || url.includes(query);
+        })
+      : normalized;
+
+    return filtered.sort((a, b) => {
+      if (Boolean(a.item.pinned) !== Boolean(b.item.pinned)) {
+        return a.item.pinned ? -1 : 1;
       }
-    }
-  });
-
-  function loadShortcuts() {
-    getStoredShortcuts((shortcuts) => {
-      shortcutContainer.innerHTML = "";
-      let renderedCount = 0;
-
-      shortcuts.forEach((item, index) => {
-        const shortcutEl = createShortcutElement(item, index);
-        if (shortcutEl) {
-          shortcutContainer.appendChild(shortcutEl);
-          renderedCount += 1;
-        }
-      });
-
-      toggleEmptyState(new Array(renderedCount));
-    });
-  }
-
-  function addShortcut() {
-    const rawUrl = prompt("ショートカットのURLを入力してください:");
-    if (!rawUrl) {
-      return;
-    }
-
-    const rawName = prompt("ショートカットの名前を入力してください:");
-    const shortcut = buildShortcut(rawUrl, rawName);
-
-    if (!shortcut) {
-      alert("有効な http または https の URL を入力してください。");
-      return;
-    }
-
-    getStoredShortcuts((shortcuts) => {
-      shortcuts.push(shortcut);
-      saveShortcuts(shortcuts, loadShortcuts);
-    });
-  }
-
-  function removeShortcut(index) {
-    getStoredShortcuts((shortcuts) => {
-      shortcuts.splice(index, 1);
-      saveShortcuts(shortcuts, loadShortcuts);
-    });
-  }
-
-  function editShortcut(item, index) {
-    const newUrlInput = prompt("ショートカットの新しいURL:", item.url);
-    if (!newUrlInput) {
-      return;
-    }
-
-    const newNameInput = prompt("ショートカットの新しい名前:", item.name || "");
-    const updatedShortcut = buildShortcut(newUrlInput, newNameInput);
-
-    if (!updatedShortcut) {
-      alert("有効な http または https の URL を入力してください。");
-      return;
-    }
-
-    getStoredShortcuts((shortcuts) => {
-      if (shortcuts[index]) {
-        shortcuts[index] = updatedShortcut;
-      }
-      saveShortcuts(shortcuts, loadShortcuts);
+      return a.index - b.index;
     });
   }
 
@@ -199,8 +159,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const displayName = (item.name || "").trim() || url.hostname;
 
     const shortcutEl = document.createElement("div");
-    shortcutEl.className = "shortcut";
-    shortcutEl.dataset.index = index;
+    shortcutEl.className = `shortcut${item.pinned ? " is-pinned" : ""}`;
+    shortcutEl.dataset.index = String(index);
     shortcutEl.title = normalizedUrl;
 
     const contentContainer = document.createElement("div");
@@ -210,6 +170,9 @@ document.addEventListener("DOMContentLoaded", () => {
     favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}&sz=64`;
     favicon.className = "shortcut-icon";
     favicon.alt = "";
+    favicon.addEventListener("error", () => {
+      favicon.style.display = "none";
+    });
     contentContainer.appendChild(favicon);
 
     const textContainer = document.createElement("div");
@@ -224,9 +187,16 @@ document.addEventListener("DOMContentLoaded", () => {
     urlEl.textContent = url.hostname;
 
     textContainer.appendChild(nameEl);
+
+    if (item.pinned) {
+      const badge = document.createElement("span");
+      badge.className = "shortcut-badge";
+      badge.textContent = "固定";
+      textContainer.appendChild(badge);
+    }
+
     textContainer.appendChild(urlEl);
     contentContainer.appendChild(textContainer);
-
     shortcutEl.appendChild(contentContainer);
 
     const moreBtn = document.createElement("button");
@@ -247,11 +217,118 @@ document.addEventListener("DOMContentLoaded", () => {
     return shortcutEl;
   }
 
+  function renderShortcuts() {
+    const filteredShortcuts = getFilteredShortcuts();
+    shortcutContainer.innerHTML = "";
+
+    let renderedCount = 0;
+    filteredShortcuts.forEach(({ item, index }) => {
+      const shortcutEl = createShortcutElement(item, index);
+      if (shortcutEl) {
+        shortcutContainer.appendChild(shortcutEl);
+        renderedCount += 1;
+      }
+    });
+
+    updateShortcutSummary(state.shortcuts.length, renderedCount);
+    toggleEmptyState(renderedCount > 0);
+  }
+
+  function loadShortcuts() {
+    getStoredShortcuts((shortcuts) => {
+      state.shortcuts = shortcuts.map((item) => ({
+        ...item,
+        pinned: Boolean(item.pinned)
+      }));
+      renderShortcuts();
+    });
+  }
+
+  function openShortcutModal(mode, index = null) {
+    state.editingIndex = index;
+
+    if (mode === "edit" && index !== null && state.shortcuts[index]) {
+      const item = state.shortcuts[index];
+      shortcutModalTitle.textContent = "ショートカットを編集";
+      shortcutNameInput.value = item.name || "";
+      shortcutUrlInput.value = item.url || "";
+      shortcutPinnedInput.checked = Boolean(item.pinned);
+    } else {
+      shortcutModalTitle.textContent = "ショートカットを追加";
+      shortcutForm.reset();
+      shortcutPinnedInput.checked = false;
+    }
+
+    shortcutModal.hidden = false;
+    shortcutUrlInput.focus();
+  }
+
+  function closeShortcutModal() {
+    shortcutModal.hidden = true;
+    state.editingIndex = null;
+    shortcutForm.reset();
+    shortcutPinnedInput.checked = false;
+  }
+
+  function submitShortcutForm(event) {
+    event.preventDefault();
+
+    const nextShortcut = buildShortcut(
+      shortcutUrlInput.value,
+      shortcutNameInput.value,
+      shortcutPinnedInput.checked
+    );
+
+    if (!nextShortcut) {
+      alert("有効な http または https の URL を入力してください。");
+      shortcutUrlInput.focus();
+      return;
+    }
+
+    const nextShortcuts = [...state.shortcuts];
+
+    if (state.editingIndex !== null && nextShortcuts[state.editingIndex]) {
+      nextShortcuts[state.editingIndex] = nextShortcut;
+    } else {
+      nextShortcuts.push(nextShortcut);
+    }
+
+    saveShortcuts(nextShortcuts, () => {
+      closeShortcutModal();
+      loadShortcuts();
+    });
+  }
+
+  function removeShortcut(index) {
+    const nextShortcuts = [...state.shortcuts];
+    nextShortcuts.splice(index, 1);
+
+    saveShortcuts(nextShortcuts, loadShortcuts);
+  }
+
+  function togglePinShortcut(index) {
+    const nextShortcuts = [...state.shortcuts];
+    if (!nextShortcuts[index]) {
+      return;
+    }
+
+    nextShortcuts[index] = {
+      ...nextShortcuts[index],
+      pinned: !nextShortcuts[index].pinned
+    };
+
+    saveShortcuts(nextShortcuts, () => {
+      closePopup();
+      loadShortcuts();
+    });
+  }
+
   function showMoreOptions(item, index) {
     closePopup();
 
     const popup = document.createElement("div");
     popup.className = "popup";
+    popup.dataset.transientPopup = "true";
     popup.addEventListener("click", (event) => {
       if (event.target === popup) {
         closePopup();
@@ -270,15 +347,26 @@ document.addEventListener("DOMContentLoaded", () => {
     popupContent.appendChild(popupDescription);
 
     const editButton = document.createElement("button");
+    editButton.className = "button-primary";
     editButton.type = "button";
     editButton.innerText = "編集";
     editButton.addEventListener("click", () => {
-      editShortcut(item, index);
       closePopup();
+      openShortcutModal("edit", index);
     });
     popupContent.appendChild(editButton);
 
+    const pinButton = document.createElement("button");
+    pinButton.className = "button-neutral";
+    pinButton.type = "button";
+    pinButton.innerText = item.pinned ? "ピン解除" : "ピン留め";
+    pinButton.addEventListener("click", () => {
+      togglePinShortcut(index);
+    });
+    popupContent.appendChild(pinButton);
+
     const deleteButton = document.createElement("button");
+    deleteButton.className = "button-danger";
     deleteButton.type = "button";
     deleteButton.innerText = "削除";
     deleteButton.addEventListener("click", () => {
@@ -290,11 +378,10 @@ document.addEventListener("DOMContentLoaded", () => {
     popupContent.appendChild(deleteButton);
 
     const cancelButton = document.createElement("button");
+    cancelButton.className = "button-neutral";
     cancelButton.type = "button";
     cancelButton.innerText = "キャンセル";
-    cancelButton.addEventListener("click", () => {
-      closePopup();
-    });
+    cancelButton.addEventListener("click", closePopup);
     popupContent.appendChild(cancelButton);
 
     popup.appendChild(popupContent);
@@ -302,29 +389,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function closePopup() {
-    const popup = document.querySelector(".popup:not([hidden])");
-    if (popup && popup !== backgroundSettingsPopup) {
+    const popup = document.querySelector('[data-transient-popup="true"]');
+    if (popup) {
       document.body.removeChild(popup);
     }
   }
 
-  if (typeof Sortable !== "undefined" && shortcutContainer) {
-    new Sortable(shortcutContainer, {
-      animation: 150,
-      onEnd: () => {
-        const newOrder = Array.from(shortcutContainer.children).map((el) => Number(el.dataset.index));
-        reorderShortcuts(newOrder);
-      }
-    });
-  }
-
   function reorderShortcuts(newOrder) {
-    getStoredShortcuts((shortcuts) => {
-      const reordered = newOrder
-        .map((idx) => shortcuts[idx])
-        .filter(Boolean);
-      saveShortcuts(reordered, loadShortcuts);
-    });
+    const pinnedItems = newOrder
+      .map((index) => state.shortcuts[index])
+      .filter((item) => item && item.pinned);
+    const regularItems = newOrder
+      .map((index) => state.shortcuts[index])
+      .filter((item) => item && !item.pinned);
+
+    saveShortcuts([...pinnedItems, ...regularItems], loadShortcuts);
   }
 
   function addDroppedShortcut(text) {
@@ -333,9 +412,49 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    getStoredShortcuts((shortcuts) => {
-      shortcuts.push(shortcut);
-      saveShortcuts(shortcuts, loadShortcuts);
+    saveShortcuts([...state.shortcuts, shortcut], loadShortcuts);
+  }
+
+  function closeBackgroundSettings() {
+    if (backgroundSettingsPopup) {
+      backgroundSettingsPopup.hidden = true;
+    }
+  }
+
+  function openBackgroundSettings() {
+    if (backgroundSettingsPopup) {
+      backgroundSettingsPopup.hidden = false;
+    }
+  }
+
+  googleSearch.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      const query = googleSearch.value.trim();
+      if (query) {
+        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      }
+    }
+  });
+
+  if (shortcutFilterInput) {
+    shortcutFilterInput.addEventListener("input", (event) => {
+      state.filterQuery = event.target.value;
+      renderShortcuts();
+    });
+  }
+
+  if (typeof Sortable !== "undefined" && shortcutContainer) {
+    new Sortable(shortcutContainer, {
+      animation: 150,
+      onEnd: () => {
+        if (state.filterQuery) {
+          loadShortcuts();
+          return;
+        }
+
+        const newOrder = Array.from(shortcutContainer.children).map((el) => Number(el.dataset.index));
+        reorderShortcuts(newOrder);
+      }
     });
   }
 
@@ -401,7 +520,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (addShortcutButton) {
     addShortcutButton.addEventListener("click", () => {
-      addShortcut();
+      openShortcutModal("create");
+    });
+  }
+
+  if (shortcutForm) {
+    shortcutForm.addEventListener("submit", submitShortcutForm);
+  }
+
+  if (shortcutCancelButton) {
+    shortcutCancelButton.addEventListener("click", closeShortcutModal);
+  }
+
+  if (shortcutModal) {
+    shortcutModal.addEventListener("click", (event) => {
+      if (event.target === shortcutModal) {
+        closeShortcutModal();
+      }
     });
   }
 
@@ -409,6 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === "Escape") {
       closePopup();
       closeBackgroundSettings();
+      closeShortcutModal();
     }
   });
 
