@@ -77,16 +77,14 @@
             <span class="metric-label">日付</span>
             <strong id="current-date" class="metric-value">----</strong>
           </article>
-        </div>
-
-        <div class="progress-card">
-          <div class="progress-card__meta">
-            <span class="metric-label">月間進行率</span>
-            <span id="month-progress-label" class="progress-card__value">0%</span>
-          </div>
-          <div class="progress-track" aria-hidden="true">
-            <div id="month-progress-bar" class="progress-fill"></div>
-          </div>
+          <article class="metric-card metric-card--news">
+            <span class="metric-label">新着条件</span>
+            <strong id="recent-window-label" class="metric-value">24時間以内</strong>
+          </article>
+          <article class="metric-card metric-card--news">
+            <span class="metric-label">更新間隔</span>
+            <strong id="refresh-interval-label" class="metric-value">10分ごと</strong>
+          </article>
         </div>
       </header>
 
@@ -150,8 +148,25 @@
     <div class="popup-content popup-content-wide" role="dialog" aria-modal="true" aria-labelledby="feed-settings-title">
       <h2 id="feed-settings-title">情報設定</h2>
       <p>ニュースソースとサーバーの health endpoint を登録します。1 行に 1 件で、`label|url` または URL 単体で入力できます。</p>
+      <label class="field-label" for="news-recency-hours">新着として扱う時間</label>
+      <select id="news-recency-hours" class="field-input">
+        <option value="3">3時間以内</option>
+        <option value="6">6時間以内</option>
+        <option value="12">12時間以内</option>
+        <option value="24" selected>24時間以内</option>
+        <option value="48">48時間以内</option>
+        <option value="72">72時間以内</option>
+      </select>
+      <label class="field-label" for="news-refresh-minutes">ニュース更新間隔</label>
+      <select id="news-refresh-minutes" class="field-input">
+        <option value="5">5分ごと</option>
+        <option value="10" selected>10分ごと</option>
+        <option value="15">15分ごと</option>
+        <option value="30">30分ごと</option>
+        <option value="60">60分ごと</option>
+      </select>
       <label class="field-label" for="news-sources-input">ニュースソース</label>
-      <textarea id="news-sources-input" class="field-input field-textarea" rows="5" placeholder="OpenAI|https://example.com/feed.xml"></textarea>
+      <textarea id="news-sources-input" class="field-input field-textarea" rows="5" placeholder="Publickey|https://www.publickey1.jp/atom.xml"></textarea>
       <label class="field-label" for="server-endpoints-input">サーバーURL</label>
       <textarea id="server-endpoints-input" class="field-input field-textarea" rows="5" placeholder="prod-api|https://api.example.com/health"></textarea>
       <div class="popup-actions">

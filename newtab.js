@@ -13,8 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const currentTime = document.getElementById("current-time");
   const currentDate = document.getElementById("current-date");
-  const monthProgressBar = document.getElementById("month-progress-bar");
-  const monthProgressLabel = document.getElementById("month-progress-label");
+  const recentWindowLabel = document.getElementById("recent-window-label");
+  const refreshIntervalLabel = document.getElementById("refresh-interval-label");
 
   const newsList = document.getElementById("news-list");
   const newsEmpty = document.getElementById("news-empty");
@@ -32,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedSettingsButton = document.getElementById("feed-settings-button");
   const feedSettingsModal = document.getElementById("feed-settings-modal");
   const newsSourcesInput = document.getElementById("news-sources-input");
+  const newsRecencyHoursInput = document.getElementById("news-recency-hours");
+  const newsRefreshMinutesInput = document.getElementById("news-refresh-minutes");
   const serverEndpointsInput = document.getElementById("server-endpoints-input");
   const saveFeedSettingsButton = document.getElementById("save-feed-settings");
   const closeFeedSettingsButton = document.getElementById("close-feed-settings");
@@ -44,9 +46,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const shortcutPinnedInput = document.getElementById("shortcut-pinned");
   const shortcutCancelButton = document.getElementById("shortcut-cancel");
 
-  const NEWS_REFRESH_MS = 10 * 60 * 1000;
   const SERVER_REFRESH_MS = 60 * 1000;
   const REQUEST_TIMEOUT_MS = 8000;
+  const DEFAULT_NEWS_SOURCES = [
+    "Publickey|https://www.publickey1.jp/atom.xml",
+    "InfoQ|https://www.infoq.com/feed/",
+    "The Register Security|https://www.theregister.com/security/headlines.atom"
+  ].join("\n");
 
   const state = {
     shortcuts: [],
@@ -55,8 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
     background: {},
     dashboardSettings: {
       newsSourcesText: "",
-      serverEndpointsText: ""
-    }
+      serverEndpointsText: "",
+      newsRecencyHours: 24,
+      newsRefreshMinutes: 10
+    },
+    newsRefreshTimerId: null,
+    serverRefreshTimerId: null
   };
 
   const timeFormatter = new Intl.DateTimeFormat("ja-JP", {
@@ -85,13 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateCurrentTime() {
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const progress = Math.round((now.getDate() / daysInMonth) * 100);
-
     currentTime.textContent = timeFormatter.format(now);
     currentDate.textContent = dateFormatter.format(now);
-    monthProgressBar.style.width = `${progress}%`;
-    monthProgressLabel.textContent = `${progress}%`;
+  }
+
+  function updateNewsTimingSummary() {
+    recentWindowLabel.textContent = `${state.dashboardSettings.newsRecencyHours}時間以内`;
+    refreshIntervalLabel.textContent = `${state.dashboardSettings.newsRefreshMinutes}分ごと`;
   }
 
   function normalizeUrl(rawValue) {
@@ -190,12 +200,17 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadSettingsAndBackground(callback = () => {}) {
     getStoredData(["background", "dashboardSettings"], (data) => {
       state.dashboardSettings = {
-        newsSourcesText: data.dashboardSettings?.newsSourcesText || "",
-        serverEndpointsText: data.dashboardSettings?.serverEndpointsText || ""
+        newsSourcesText: data.dashboardSettings?.newsSourcesText || DEFAULT_NEWS_SOURCES,
+        serverEndpointsText: data.dashboardSettings?.serverEndpointsText || "",
+        newsRecencyHours: Number(data.dashboardSettings?.newsRecencyHours || 24),
+        newsRefreshMinutes: Number(data.dashboardSettings?.newsRefreshMinutes || 10)
       };
       newsSourcesInput.value = state.dashboardSettings.newsSourcesText;
+      newsRecencyHoursInput.value = String(state.dashboardSettings.newsRecencyHours);
+      newsRefreshMinutesInput.value = String(state.dashboardSettings.newsRefreshMinutes);
       serverEndpointsInput.value = state.dashboardSettings.serverEndpointsText;
       applyBackground(data.background || {});
+      updateNewsTimingSummary();
       callback();
     });
   }
@@ -384,6 +399,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openFeedSettings() {
     newsSourcesInput.value = state.dashboardSettings.newsSourcesText;
+    newsRecencyHoursInput.value = String(state.dashboardSettings.newsRecencyHours);
+    newsRefreshMinutesInput.value = String(state.dashboardSettings.newsRefreshMinutes);
     serverEndpointsInput.value = state.dashboardSettings.serverEndpointsText;
     feedSettingsModal.hidden = false;
   }
@@ -672,6 +689,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const items = settled
       .filter((entry) => entry.status === "fulfilled")
       .flatMap((entry) => entry.value)
+      .filter((item) => {
+        if (!item.publishedAt) {
+          return true;
+        }
+        const cutoff = Date.now() - state.dashboardSettings.newsRecencyHours * 60 * 60 * 1000;
+        return item.publishedAt.getTime() >= cutoff;
+      })
       .sort((a, b) => {
         if (!a.publishedAt || !b.publishedAt) {
           return 0;
@@ -682,7 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderNewsItems(
       items,
-      "ニュースソースに接続できませんでした。URL や RSS/Atom 形式を確認してください。"
+      "条件に合う新着ITニュースがありません。時間設定かフィードURLを見直してください。"
     );
   }
 
@@ -749,10 +773,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function schedulePanelRefresh() {
+    if (state.newsRefreshTimerId) {
+      window.clearInterval(state.newsRefreshTimerId);
+    }
+    if (state.serverRefreshTimerId) {
+      window.clearInterval(state.serverRefreshTimerId);
+    }
+
     refreshNewsPanel();
     refreshServerPanel();
-    window.setInterval(refreshNewsPanel, NEWS_REFRESH_MS);
-    window.setInterval(refreshServerPanel, SERVER_REFRESH_MS);
+    state.newsRefreshTimerId = window.setInterval(
+      refreshNewsPanel,
+      state.dashboardSettings.newsRefreshMinutes * 60 * 1000
+    );
+    state.serverRefreshTimerId = window.setInterval(refreshServerPanel, SERVER_REFRESH_MS);
   }
 
   googleSearch.addEventListener("keydown", (event) => {
@@ -865,14 +899,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   saveFeedSettingsButton.addEventListener("click", () => {
     state.dashboardSettings = {
-      newsSourcesText: newsSourcesInput.value.trim(),
-      serverEndpointsText: serverEndpointsInput.value.trim()
+      newsSourcesText: newsSourcesInput.value.trim() || DEFAULT_NEWS_SOURCES,
+      serverEndpointsText: serverEndpointsInput.value.trim(),
+      newsRecencyHours: Number(newsRecencyHoursInput.value || 24),
+      newsRefreshMinutes: Number(newsRefreshMinutesInput.value || 10)
     };
 
     saveStoredData({ dashboardSettings: state.dashboardSettings }, () => {
+      updateNewsTimingSummary();
       closeFeedSettings();
-      refreshNewsPanel();
-      refreshServerPanel();
+      schedulePanelRefresh();
     });
   });
 
