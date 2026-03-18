@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Custom New Tab - Only Shortcuts",
-  "version": "1.2",
-  "description": "ショートカット管理と Google 検索に特化したシンプルな新しいタブ",
+  "version": "1.3",
+  "description": "ショートカット、ニュース、サーバー状態をまとめて見られる新しいタブ",
   "icons": {
     "128": "icon.png"
   },
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
-  "permissions": ["storage"]
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"]
 }
